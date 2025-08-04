@@ -2,13 +2,30 @@
 
 import { Memo, MEMO_CATEGORIES } from '@/types/memo'
 
+// 마크다운 문법을 제거하여 플레인 텍스트로 변환하는 함수
+const stripMarkdown = (markdown: string): string => {
+  return markdown
+    .replace(/^#{1,6}\s+/gm, '') // 헤더 제거
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 볼드 제거
+    .replace(/\*(.*?)\*/g, '$1') // 이탤릭 제거
+    .replace(/`(.*?)`/g, '$1') // 인라인 코드 제거
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1') // 링크 제거
+    .replace(/!\[(.*?)\]\(.*?\)/g, '$1') // 이미지 제거
+    .replace(/^[\s]*-[\s]+/gm, '') // 리스트 마커 제거
+    .replace(/^[\s]*\d+\.[\s]+/gm, '') // 순서 리스트 마커 제거
+    .replace(/```[\s\S]*?```/g, '') // 코드 블록 제거
+    .replace(/\n\s*\n/g, '\n') // 빈 줄 정리
+    .trim()
+}
+
 interface MemoItemProps {
   memo: Memo
   onEdit: (memo: Memo) => void
   onDelete: (id: string) => void
+  onView?: (memo: Memo) => void
 }
 
-export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
+export default function MemoItem({ memo, onEdit, onDelete, onView }: MemoItemProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('ko-KR', {
@@ -31,8 +48,19 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
     return colors[category as keyof typeof colors] || colors.other
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 버튼 클릭 시에는 상세보기가 열리지 않도록 함
+    if ((e.target as HTMLElement).closest('button')) {
+      return
+    }
+    onView?.(memo)
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+    <div 
+      className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* 헤더 */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -102,7 +130,7 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
       {/* 내용 */}
       <div className="mb-4">
         <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
-          {memo.content}
+          {stripMarkdown(memo.content)}
         </p>
       </div>
 
