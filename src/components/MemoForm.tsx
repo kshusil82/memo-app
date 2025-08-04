@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import {
   Memo,
   MemoFormData,
@@ -8,10 +9,21 @@ import {
   DEFAULT_CATEGORIES,
 } from '@/types/memo'
 
+// MDEditor를 동적으로 import (SSR 이슈 방지)
+const MDEditor = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => ({ default: mod.default })),
+  { ssr: false }
+)
+
+const commands = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => ({ default: mod.commands })),
+  { ssr: false }
+)
+
 interface MemoFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: MemoFormData) => void
+  onSubmit: (data: MemoFormData) => Promise<void>
   editingMemo?: Memo | null
 }
 
@@ -88,7 +100,7 @@ export default function MemoForm({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* 헤더 */}
           <div className="flex justify-between items-center mb-6">
@@ -170,26 +182,23 @@ export default function MemoForm({
 
             {/* 내용 */}
             <div>
-              <label
-                htmlFor="content"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 내용 *
               </label>
-              <textarea
-                id="content"
-                value={formData.content}
-                onChange={e =>
-                  setFormData(prev => ({
-                    ...prev,
-                    content: e.target.value,
-                  }))
-                }
-                className="placeholder-gray-400 text-gray-400 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                placeholder="메모 내용을 입력하세요"
-                rows={8}
-                required
-              />
+              <div style={{ minHeight: '300px', zIndex: 1 }}>
+                <MDEditor
+                  value={formData.content}
+                  onChange={(value) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      content: value || '',
+                    }))
+                  }
+                  data-color-mode="light"
+                  height={300}
+                  style={{ zIndex: 1 }}
+                />
+              </div>
             </div>
 
             {/* 태그 */}
