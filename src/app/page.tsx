@@ -26,15 +26,23 @@ export default function Home() {
   const [viewingMemo, setViewingMemo] = useState<Memo | null>(null)
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false)
 
-  const handleCreateMemo = (formData: MemoFormData) => {
-    createMemo(formData)
-    setIsFormOpen(false)
+  const handleCreateMemo = async (formData: MemoFormData) => {
+    const newMemo = await createMemo(formData)
+    if (newMemo) {
+      setIsFormOpen(false)
+    } else {
+      alert('메모 생성에 실패했습니다.')
+    }
   }
 
-  const handleUpdateMemo = (formData: MemoFormData) => {
+  const handleUpdateMemo = async (formData: MemoFormData) => {
     if (editingMemo) {
-      updateMemo(editingMemo.id, formData)
-      setEditingMemo(null)
+      const success = await updateMemo(editingMemo.id, formData)
+      if (success) {
+        setEditingMemo(null)
+      } else {
+        alert('메모 업데이트에 실패했습니다.')
+      }
     }
   }
 
